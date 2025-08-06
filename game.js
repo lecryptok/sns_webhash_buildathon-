@@ -3,6 +3,10 @@
     const ctx = canvas.getContext('2d');
     const playButton = document.getElementById('playButton');
 
+    // --- NOUVEAU : Références aux éléments HTML des écrans ---
+    const startScreenInfo = document.getElementById('startScreenInfo');
+    const finalScreenInfo = document.getElementById('finalScreenInfo');
+
     // --- Chargement de l'image de l'oiseau ---
     const birdImage = new Image();
     let imageLoaded = false;
@@ -30,8 +34,7 @@
     let bird, pipes, score, gameOver, gameStarted, frameCount, finalSequenceActive;
     let birdSize, pipeWidth, pipeGap, pipeSpeed, gravity, jumpStrength;
 
-    // NOUVEAU : Score à atteindre pour déclencher la fin spéciale
-    const FINAL_SCORE_TRIGGER = 15; // Vous pouvez ajuster cette valeur
+    const FINAL_SCORE_TRIGGER = 15;
 
     function initializeGameVariables() {
         const baseHeight = 640;
@@ -57,7 +60,7 @@
         frameCount = 0;
         gameOver = true;
         gameStarted = false;
-        finalSequenceActive = false; // NOUVEAU
+        finalSequenceActive = false;
         floatingTexts = [];
     }
 
@@ -93,7 +96,7 @@
     }
 
     function drawScore() {
-        if (finalSequenceActive) return; // Ne pas afficher le score sur l'écran final
+        if (finalSequenceActive) return;
         ctx.fillStyle = 'white';
         ctx.font = `${30 * (canvas.height / 640)}px sans-serif`;
         ctx.textAlign = 'center';
@@ -109,58 +112,31 @@
         ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2 - 40);
         ctx.font = `${30 * (canvas.height / 640)}px sans-serif`;
         ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+
+        // On s'assure que les écrans HTML sont cachés
+        finalScreenInfo.style.display = 'none';
+        startScreenInfo.style.display = 'none';
+
         playButton.textContent = 'Retry';
         playButton.style.display = 'block';
     }
 
-    // NOUVEAU : Fonction pour dessiner l'écran final
+    // --- MODIFIÉ : La fonction ne dessine plus de texte, elle gère l'affichage des éléments HTML ---
     function drawFinalScreen() {
-        drawFloatingTexts();
-
-        ctx.fillStyle = '#00ff88';
-        const fontSize = 70 * (canvas.height / 640);
-        ctx.font = `bold ${fontSize}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = 'black';
-        ctx.shadowBlur = 15;
-        ctx.fillText('SNSxWebHash.sol', canvas.width / 2, canvas.height / 2);
-        ctx.shadowBlur = 0;
-
-        // --- SECTION MODIFIÉE ---
-        const scale = canvas.height / 640;
-        const boxWidth = 220 * scale;
-        const boxHeight = 40 * scale;
-        const boxX = (canvas.width - boxWidth) / 2;
-        const boxY = canvas.height - boxHeight - (20 * scale);
-        const borderRadius = 10 * scale;
-
-        // Dessine le rectangle avec un fond gris opaque
-        ctx.fillStyle = '#4A4A4A'; // MODIFIÉ : Couleur grise opaque
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
-        ctx.fill();
-
-        // Écrit le texte en gras et blanc
-        ctx.fillStyle = 'white';
-        const boxFontSize = 16 * scale;
-        ctx.font = `bold ${boxFontSize}px sans-serif`; // MODIFIÉ : Texte en gras
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Built with WebHash', canvas.width / 2, boxY + boxHeight / 2);
-        // --- FIN DE LA SECTION MODIFIÉE ---
-
+        drawFloatingTexts(); // On continue de dessiner les mots qui flottent
+        finalScreenInfo.style.display = 'flex'; // Affiche l'écran final HTML
         playButton.style.display = 'none';
     }
 
+    // --- MODIFIÉ : La fonction ne dessine plus de texte, elle gère l'affichage des éléments HTML ---
     function drawStartScreen() {
         ctx.fillStyle = 'rgb(19, 36, 67)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'white';
-        ctx.font = `${24 * (canvas.height / 640)}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('Press “Play” to start', canvas.width / 2, canvas.height / 2 - 50);
-        ctx.fillText('Use the space bar or click to jump', canvas.width / 2, canvas.height / 2);
+
+        // Affiche les éléments HTML de l'écran de démarrage
+        startScreenInfo.style.display = 'block';
+        finalScreenInfo.style.display = 'none'; // S'assure que l'écran final est caché
+
         playButton.textContent = 'Play';
         playButton.style.display = 'block';
     }
@@ -173,7 +149,11 @@
         bird.velocityY = 0;
         gameOver = false;
         gameStarted = true;
+
+        // Cache le bouton et les textes de l'écran de démarrage
         playButton.style.display = 'none';
+        startScreenInfo.style.display = 'none';
+
         gameLoop();
     }
 
@@ -184,7 +164,6 @@
     }
 
     function update() {
-        // --- Logique principale de l'oiseau et des tuyaux ---
         bird.velocityY += gravity;
         bird.y += bird.velocityY;
 
@@ -204,23 +183,17 @@
             }
         });
 
-        // --- MODIFIÉ : Logique des textes flottants ---
         updateFloatingTexts();
 
-        // NOUVEAU : Déclencheur pour la séquence finale
         if (score >= FINAL_SCORE_TRIGGER && !finalSequenceActive) {
             finalSequenceActive = true;
-            endGame(); // Met fin au jeu pour lancer l'écran final
+            endGame();
         }
     }
 
-    // NOUVEAU : Fonction dédiée à la mise à jour des textes pour plus de clarté
     function updateFloatingTexts() {
-        // La fréquence d'apparition et la taille des textes augmentent avec le score
         const textSpawnRate = finalSequenceActive ? 1 : Math.max(1, 5 - Math.floor(score / 3));
         const baseTextSize = finalSequenceActive ? 60 : 20 + score * 2;
-
-        // Le texte s'efface plus lentement à mesure que le score augmente
         const alphaDecay = finalSequenceActive ? 0.002 : Math.max(0.001, 0.004 - score * 0.00015);
 
         if (frameCount % textSpawnRate === 0) {
@@ -256,16 +229,13 @@
     }
 
     function gameLoop() {
-        // MODIFIÉ : Gestion de la boucle de jeu
         if (gameOver) {
             if (finalSequenceActive) {
-                // Si la séquence finale est active, on continue d'animer
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                updateFloatingTexts(); // Continue de générer et faire bouger les textes
+                updateFloatingTexts();
                 drawFinalScreen();
-                requestAnimationFrame(gameLoop); // Continue l'animation de l'écran final
+                requestAnimationFrame(gameLoop);
             } else {
-                // Sinon, on affiche l'écran Game Over normal et on arrête la boucle
                 drawGameOver();
             }
             return;
@@ -295,7 +265,10 @@
     function handleResize() {
         setupCanvas();
         initializeGameVariables();
-        drawStartScreen();
+        // Redessine l'écran de démarrage qui s'adapte à la nouvelle taille
+        if (!gameStarted && !finalSequenceActive) {
+            drawStartScreen();
+        }
     }
     window.addEventListener('resize', handleResize);
 
@@ -303,7 +276,10 @@
     setupCanvas();
     initializeGameVariables();
 
+    // Cache les éléments au cas où ils seraient visibles
     playButton.style.display = 'none';
+    startScreenInfo.style.display = 'none';
+    finalScreenInfo.style.display = 'none';
 
     birdImage.onload = () => {
         imageLoaded = true;
@@ -311,9 +287,8 @@
     };
     birdImage.onerror = () => {
         console.error("L'image de l'oiseau n'a pas pu être chargée. Vérifiez l'URL.");
-        // Gérer l'erreur, par exemple en dessinant un carré à la place
-        imageLoaded = false; // On indique que l'image n'est pas chargée
-        drawStartScreen(); // On peut quand même démarrer
+        imageLoaded = false;
+        drawStartScreen();
     };
     birdImage.src = 'https://www.sns.id/assets/logo/brand.svg';
 });

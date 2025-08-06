@@ -11,6 +11,9 @@
     /* Fait en sorte que le conteneur prenne toute la place */
     width: 100vw; /* 100% de la largeur de la vue */
     height: 100vh; /* 100% de la hauteur de la vue */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 canvas {
@@ -37,10 +40,69 @@ canvas {
     transition: all 0.2s ease; /* Ajoute une petite transition douce */
 }
 
-/* NOUVEAU : Media query pour les petits écrans (mobiles) */
+/* --- NOUVEAUX STYLES POUR LES ÉCRANS --- */
+
+/* Conteneur pour le texte de l'écran de démarrage */
+#startScreenInfo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -100%); /* Centre horizontalement, place au-dessus du bouton Play */
+    color: white;
+    text-align: center;
+    font-size: 24px;
+    z-index: 5;
+    pointer-events: none; /* Permet de cliquer à travers */
+}
+
+    #startScreenInfo p {
+        margin: 8px 0;
+    }
+
+/* Conteneur pour l'écran final */
+#finalScreenInfo {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: none; /* Caché par défaut */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    pointer-events: none;
+}
+
+    #finalScreenInfo h1 {
+        color: #00ff88;
+        font-size: clamp(40px, 10vw, 90px); /* Taille de police responsive */
+        font-weight: bold;
+        text-shadow: 0 0 15px black;
+        margin: 0;
+    }
+
+.built-with-box {
+    background-color: #4A4A4A;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: clamp(14px, 3vw, 18px); /* Taille de police responsive */
+    position: absolute;
+    bottom: 5%; /* Positionné en bas */
+}
+
+/* --- FIN DES NOUVEAUX STYLES --- */
+
+/* Media query pour les petits écrans (mobiles) */
 @media (max-width: 600px) {
     #playButton {
         padding: 12px 24px;
+        font-size: 18px;
+    }
+
+    #startScreenInfo {
         font-size: 18px;
     }
 }
