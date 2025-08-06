@@ -1,0 +1,40 @@
+﻿body {
+    margin: 0;
+    background-color: rgb(19, 36, 67);
+    font-family: sans-serif;
+    /* Empêche les barres de défilement d'apparaître */
+    overflow: hidden;
+}
+
+#game-container {
+    position: relative;
+    /* Fait en sorte que le conteneur prenne toute la place */
+    width: 100vw; /* 100% de la largeur de la vue */
+    height: 100vh; /* 100% de la hauteur de la vue */
+}
+
+canvas {
+    background-color: rgb(19, 36, 67);
+    display: block;
+    /* Le canvas s'étire pour remplir son conteneur */
+    width: 100%;
+    height: 100%;
+    /* On retire la bordure pour un effet plein écran plus immersif */
+    /* border: 2px solid #00ff88; */
+    /* border-radius: 8px; */
+}
+
+#playButton {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #00ff88;
+    color: black;
+    border: none;
+    padding: 16px 32px;
+    font-size: 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 10;
+}
