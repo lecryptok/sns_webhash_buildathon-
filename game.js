@@ -3,7 +3,7 @@
     const ctx = canvas.getContext('2d');
     const playButton = document.getElementById('playButton');
 
-    // --- NOUVEAU : Chargement de l'image de l'oiseau ---
+    // --- Chargement de l'image de l'oiseau ---
     const birdImage = new Image();
     let imageLoaded = false;
 
@@ -20,7 +20,6 @@
     ];
     let floatingTexts = [];
 
-
     // --- Fonctions de configuration ---
     function setupCanvas() {
         canvas.width = window.innerWidth;
@@ -28,14 +27,16 @@
     }
 
     // --- Variables du jeu ---
-    let bird, pipes, score, gameOver, gameStarted, frameCount;
+    let bird, pipes, score, gameOver, gameStarted, frameCount, finalSequenceActive;
     let birdSize, pipeWidth, pipeGap, pipeSpeed, gravity, jumpStrength;
+
+    // NOUVEAU : Score à atteindre pour déclencher la fin spéciale
+    const FINAL_SCORE_TRIGGER = 15; // Vous pouvez ajuster cette valeur
 
     function initializeGameVariables() {
         const baseHeight = 640;
         const scale = canvas.height / baseHeight;
 
-        // Ajustez ces valeurs pour correspondre aux dimensions de votre image
         birdSize = { width: 50 * scale, height: 40 * scale };
         pipeWidth = 60 * scale;
         pipeGap = 180 * scale;
@@ -56,15 +57,11 @@
         frameCount = 0;
         gameOver = true;
         gameStarted = false;
+        finalSequenceActive = false; // NOUVEAU
         floatingTexts = [];
     }
 
-
     // --- Fonctions de dessin ---
-
-    /**
-     * MODIFIÉ : Dessine l'image chargée de l'oiseau sur le canvas.
-     */
     function drawBird() {
         if (imageLoaded) {
             ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
@@ -96,6 +93,7 @@
     }
 
     function drawScore() {
+        if (finalSequenceActive) return; // Ne pas afficher le score sur l'écran final
         ctx.fillStyle = 'white';
         ctx.font = `${30 * (canvas.height / 640)}px sans-serif`;
         ctx.textAlign = 'center';
@@ -115,6 +113,46 @@
         playButton.style.display = 'block';
     }
 
+    // NOUVEAU : Fonction pour dessiner l'écran final
+    function drawFinalScreen() {
+        drawFloatingTexts();
+
+        ctx.fillStyle = '#00ff88';
+        const fontSize = 70 * (canvas.height / 640);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 15;
+        ctx.fillText('SNSxWebHash.sol', canvas.width / 2, canvas.height / 2);
+        ctx.shadowBlur = 0;
+
+        // --- SECTION MODIFIÉE ---
+        const scale = canvas.height / 640;
+        const boxWidth = 220 * scale;
+        const boxHeight = 40 * scale;
+        const boxX = (canvas.width - boxWidth) / 2;
+        const boxY = canvas.height - boxHeight - (20 * scale);
+        const borderRadius = 10 * scale;
+
+        // Dessine le rectangle avec un fond gris opaque
+        ctx.fillStyle = '#4A4A4A'; // MODIFIÉ : Couleur grise opaque
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
+        ctx.fill();
+
+        // Écrit le texte en gras et blanc
+        ctx.fillStyle = 'white';
+        const boxFontSize = 16 * scale;
+        ctx.font = `bold ${boxFontSize}px sans-serif`; // MODIFIÉ : Texte en gras
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Built with WebHash', canvas.width / 2, boxY + boxHeight / 2);
+        // --- FIN DE LA SECTION MODIFIÉE ---
+
+        playButton.style.display = 'none';
+    }
+
     function drawStartScreen() {
         ctx.fillStyle = 'rgb(19, 36, 67)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -129,7 +167,6 @@
 
 
     // --- Logique du jeu ---
-
     function startGame() {
         initializeGameVariables();
         bird.y = canvas.height / 2;
@@ -147,6 +184,7 @@
     }
 
     function update() {
+        // --- Logique principale de l'oiseau et des tuyaux ---
         bird.velocityY += gravity;
         bird.y += bird.velocityY;
 
@@ -158,20 +196,6 @@
         pipes.forEach(pipe => { pipe.x -= pipeSpeed; });
         pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
 
-        if (frameCount % 5 === 0) {
-            const newText = {
-                content: artisticTextsList[Math.floor(Math.random() * artisticTextsList.length)],
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 30 + 20,
-                angle: (Math.random() - 0.5) * Math.PI,
-                alpha: 1.0
-            };
-            floatingTexts.push(newText);
-        }
-        floatingTexts.forEach(text => { text.alpha -= 0.004; });
-        floatingTexts = floatingTexts.filter(text => text.alpha > 0);
-
         checkCollisions();
         pipes.forEach(pipe => {
             if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
@@ -179,6 +203,40 @@
                 pipe.passed = true;
             }
         });
+
+        // --- MODIFIÉ : Logique des textes flottants ---
+        updateFloatingTexts();
+
+        // NOUVEAU : Déclencheur pour la séquence finale
+        if (score >= FINAL_SCORE_TRIGGER && !finalSequenceActive) {
+            finalSequenceActive = true;
+            endGame(); // Met fin au jeu pour lancer l'écran final
+        }
+    }
+
+    // NOUVEAU : Fonction dédiée à la mise à jour des textes pour plus de clarté
+    function updateFloatingTexts() {
+        // La fréquence d'apparition et la taille des textes augmentent avec le score
+        const textSpawnRate = finalSequenceActive ? 1 : Math.max(1, 5 - Math.floor(score / 3));
+        const baseTextSize = finalSequenceActive ? 60 : 20 + score * 2;
+
+        // Le texte s'efface plus lentement à mesure que le score augmente
+        const alphaDecay = finalSequenceActive ? 0.002 : Math.max(0.001, 0.004 - score * 0.00015);
+
+        if (frameCount % textSpawnRate === 0) {
+            const newText = {
+                content: artisticTextsList[Math.floor(Math.random() * artisticTextsList.length)],
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 20 + baseTextSize,
+                angle: (Math.random() - 0.5) * Math.PI,
+                alpha: 1.0
+            };
+            floatingTexts.push(newText);
+        }
+
+        floatingTexts.forEach(text => { text.alpha -= alphaDecay; });
+        floatingTexts = floatingTexts.filter(text => text.alpha > 0);
     }
 
     function checkCollisions() {
@@ -198,10 +256,21 @@
     }
 
     function gameLoop() {
+        // MODIFIÉ : Gestion de la boucle de jeu
         if (gameOver) {
-            drawGameOver();
+            if (finalSequenceActive) {
+                // Si la séquence finale est active, on continue d'animer
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                updateFloatingTexts(); // Continue de générer et faire bouger les textes
+                drawFinalScreen();
+                requestAnimationFrame(gameLoop); // Continue l'animation de l'écran final
+            } else {
+                // Sinon, on affiche l'écran Game Over normal et on arrête la boucle
+                drawGameOver();
+            }
             return;
         }
+
         update();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBird();
@@ -216,7 +285,7 @@
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') {
             e.preventDefault();
-            if (gameStarted) { jump(); } else { startGame(); }
+            if (gameStarted) { jump(); } else if (!finalSequenceActive) { startGame(); }
         }
     });
     canvas.addEventListener('click', () => {
@@ -234,20 +303,17 @@
     setupCanvas();
     initializeGameVariables();
 
-    // On cache le bouton de jeu le temps que l'image charge
     playButton.style.display = 'none';
 
-    // --- NOUVEAU : Déclenchement du chargement et affichage initial ---
     birdImage.onload = () => {
         imageLoaded = true;
-        // Une fois l'image prête, on affiche l'écran de démarrage
         drawStartScreen();
     };
     birdImage.onerror = () => {
         console.error("L'image de l'oiseau n'a pas pu être chargée. Vérifiez l'URL.");
-        // Gérer l'erreur, par exemple en affichant un message.
+        // Gérer l'erreur, par exemple en dessinant un carré à la place
+        imageLoaded = false; // On indique que l'image n'est pas chargée
+        drawStartScreen(); // On peut quand même démarrer
     };
-    // !!! IMPORTANT : Remplacez l'URL ci-dessous par un lien direct vers votre image.
     birdImage.src = 'https://www.sns.id/assets/logo/brand.svg';
-
 });
